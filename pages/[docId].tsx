@@ -1,39 +1,39 @@
 /** @jsxImportSource theme-ui */
-import type { NextPage } from 'next'
+import type { GetServerSideProps, NextPage } from 'next'
 import Image from 'next/image'
-import { Box, Button, Container, Flex, Grid, Heading, Input } from 'theme-ui'
+import { Box, Button, Container, Flex, Grid, Heading } from 'theme-ui'
 import heroImg from '../public/hero-img.png'
 import { CgChevronDownR } from 'react-icons/cg'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import DataForm from '../components/data-form/data-form'
 import { ResignerDetailsContext } from '../context/ResignerDetails'
 import Letter from '../components/letter/letter'
 import axios from 'axios'
-import { ApiResponse } from '../models/api-response.model'
-import { SaveRequest } from '../dto/save-request.dto'
-const Home: NextPage = () => {
+import { useRouter } from 'next/router'
+import { DocumentBody } from '../models/api-response.model'
+interface Props {
+  data: DocumentBody | null;
+}
+const Saved: NextPage<Props> = ({ data }) => {
   const generatorRef = useRef<HTMLDivElement | null>(null);
-  const [saveLink, setSaveLink] = useState<string>("")
-  const [recipient, setRecipient] = useState<string>('')
-  const [weeksNotice, setWeeksNotice] = useState<number>(0)
-  const [jobTitle, setJobTitle] = useState<string>('')
-  const [sender, setSender] = useState<string>('')
-  const [company, setCompany] = useState<string>('')
-  const [resignationDate, setResignationDate] = useState<Date | string>("")
-
-  async function handleSaveLinkClick() {
-    const saveRequest: SaveRequest = {
-      recipient,
-      weeksNotice,
-      jobTitle,
-      sender,
-      company,
-      resignationDate
-    }
-    const { data, statusText } = await axios.post<ApiResponse>('api/save', saveRequest)
-    const saveId: string = data.saveId || '';
-    setSaveLink(`https://www.resignator.xyz/${saveId}`)
-  }
+  const [recipient, setRecipient] = useState<string>(data!.recipient)
+  const [weeksNotice, setWeeksNotice] = useState<number>(data!.weeksNotice)
+  const [jobTitle, setJobTitle] = useState<string>(data!.jobTitle)
+  const [sender, setSender] = useState<string>(data!.sender)
+  const [company, setCompany] = useState<string>(data!.company)
+  const [resignationDate, setResignationDate] = useState<Date | string>(data!.resignationDate)
+  useEffect(() => {
+    console.log("printing props")
+    console.log(data)
+  }, [])
+  /**
+   * recipient
+   * weeksNotice
+   * jobTitle
+   * sender
+   * company
+   * resignationDate
+   */
   function handleGetStartedClick(e: any) {
     e.stopPropagation();
     generatorRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -99,26 +99,13 @@ const Home: NextPage = () => {
                 company, setCompany,
                 resignationDate, setResignationDate
               }}>
-
               <Box>
                 <Letter />
               </Box>
-              <Flex>
-                <Button
-                  onClick={() => handleSaveLinkClick()}
-                  sx={{
-                    fontSize: 12
-                  }} mr={4}>
-                  Generate Save Link
-                </Button>
-                <Input value={saveLink} placeholder="Your save link will appear here" readOnly />
-              </Flex>
               <Box>
                 <DataForm />
               </Box>
-
             </ResignerDetailsContext.Provider>
-
           </Grid>
         </Container>
       </main>
@@ -132,4 +119,48 @@ const Home: NextPage = () => {
   )
 }
 
-export default Home
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const { query } = ctx;
+  const docId: string = (query.docId as string);
+  const url: string = 'https://data.mongodb-api.com/app/data-ponbz/endpoint/data/beta/action/findOne'
+  console.log("printing doc id")
+  console.log(query.docId)
+  const body = JSON.stringify({
+    "collection": "details",
+    "database": "resigner",
+    "dataSource": "resign-now",
+    "filter": {
+        "id": docId
+    },
+    "projection": {
+        "recipient": 1,
+        "weeksNotice": 1,
+        "jobTitle": 1,
+        "sender": 1,
+        "company": 1,
+        "resignationDate": 1,
+    }
+});
+  const { data, status } = await axios.post(url, body, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Request-Headers': '*',
+      'api-key': process.env.MONGO_API_KEY!
+    }
+  })
+
+  if (data?.document) {
+    return {
+      props: {
+        data: data.document
+      }
+    }
+  } else {
+    return {
+      notFound: true,
+    }
+  }
+
+}
+
+export default Saved
