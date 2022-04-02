@@ -103,6 +103,9 @@ const Home: NextPage = () => {
               <Box>
                 <Letter />
               </Box>
+              <Box>
+                <DataForm />
+              </Box>
               <Flex>
                 <Button
                   onClick={() => handleSaveLinkClick()}
@@ -113,10 +116,6 @@ const Home: NextPage = () => {
                 </Button>
                 <Input value={saveLink} placeholder="Your save link will appear here" readOnly />
               </Flex>
-              <Box>
-                <DataForm />
-              </Box>
-
             </ResignerDetailsContext.Provider>
 
           </Grid>

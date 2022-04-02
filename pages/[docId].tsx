@@ -22,10 +22,7 @@ const Saved: NextPage<Props> = ({ data }) => {
   const [sender, setSender] = useState<string>(data!.sender)
   const [company, setCompany] = useState<string>(data!.company)
   const [resignationDate, setResignationDate] = useState<Date | string>(data!.resignationDate)
-  useEffect(() => {
-    console.log("printing props")
-    console.log(data)
-  }, [])
+
   /**
    * recipient
    * weeksNotice
